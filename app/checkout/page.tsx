@@ -131,7 +131,7 @@ export default function CheckoutPage() {
         {cart.map((item) => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
             <span>{item.name} x {item.quantity}</span>
-            <span>₦{(item.price * item.quantity).toLocaleString()}</span>
+            <span>{(item.price * item.quantity).toLocaleString()}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
@@ -181,17 +181,29 @@ export default function CheckoutPage() {
           />
         </div>
         
-        {/* Wrapper div for styling */}
-        <div style={{ 
-          width: '100%', 
-          padding: '1rem', 
-          backgroundColor: '#16a34a', 
-          borderRadius: '8px',
-          marginTop: '1rem',
-          textAlign: 'center'
-        }}>
-          <PaystackButton {...componentProps} />
-        </div>
+        {/* PaystackButton with inline styles */}
+        <PaystackButton 
+          {...componentProps}
+          className="paystack-button"
+        />
+        
+        <style jsx>{`
+          .paystack-button {
+            width: 100%;
+            padding: 1rem;
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+          }
+          .paystack-button:hover {
+            background-color: #15803d;
+          }
+        `}</style>
       </div>
     </main>
   );
