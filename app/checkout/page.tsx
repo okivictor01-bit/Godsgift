@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { usePaystackPayment } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [clickCount, setClickCount] = useState(0);
   const router = useRouter();
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function CheckoutPage() {
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const onSuccess = async (reference: any) => {
+  const onSuccess = useCallback(async (reference: any) => {
     setIsProcessing(true);
     try {
       const { data: orderData, error: orderError } = await supabase
@@ -81,36 +82,48 @@ export default function CheckoutPage() {
     } finally {
       setIsProcessing(false);
     }
-  };
+  }, [formData, totalAmount, cart, router]);
 
-  const onClose = () => {
+  const onClose = useCallback(() => {
     console.log('Payment closed');
-  };
+    setErrorMessage('Payment was cancelled');
+  }, []);
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
-  
-  const config: any = {
+
+  const config = useMemo(() => ({
     reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
-  };
+  }), [formData.email, totalAmount, publicKey]);
 
   const initializePayment = usePaystackPayment(config);
 
   const handlePayClick = () => {
+    setClickCount(prev => prev + 1);
+    setErrorMessage('');
+
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       setErrorMessage('Please fill in all fields');
+      alert('Please fill in all fields');
       return;
     }
 
     if (!publicKey) {
       setErrorMessage('Payment system not configured');
+      alert('Payment system not configured');
       return;
     }
 
-    setErrorMessage('');
-    initializePayment({ onSuccess, onClose });
+    try {
+      alert('Button clicked! Opening Paystack...');
+      initializePayment({ onSuccess, onClose });
+    } catch (error: any) {
+      const errorMsg = error?.message || String(error);
+      setErrorMessage(`Error: ${errorMsg}`);
+      alert(`Error: ${errorMsg}`);
+    }
   };
 
   if (loading) {
@@ -118,29 +131,30 @@ export default function CheckoutPage() {
   }
 
   if (cart.length === 0) {
-    return null; 
+    return null;
   }
 
   return (
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
-      
-      <div style={{ 
-        padding: '1rem', 
-        backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5', 
+
+      <div style={{
+        padding: '1rem',
+        backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5',
         border: `2px solid ${errorMessage ? '#dc2626' : '#16a34a'}`,
-        borderRadius: '8px', 
-        marginBottom: '2rem' 
+        borderRadius: '8px',
+        marginBottom: '2rem'
       }}>
         <strong style={{ color: errorMessage ? '#dc2626' : '#16a34a' }}>Debug Info:</strong>
         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : ' MISSING'}</div>
+          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : '❌ MISSING'}</div>
           <div>Email: {formData.email || 'Empty'}</div>
           <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
+          <div>Click count: {clickCount}</div>
           {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
         </div>
       </div>
-      
+
       <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
         <h2 style={{ marginTop: 0, fontSize: '1.2rem' }}>Order Summary</h2>
         {cart.map((item) => (
@@ -158,44 +172,44 @@ export default function CheckoutPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
-          <input 
-            type="text" 
-            required 
-            value={formData.name} 
-            onChange={(e) => setFormData({...formData, name: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Email Address</label>
-          <input 
-            type="email" 
-            required 
-            value={formData.email} 
-            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone Number</label>
-          <input 
-            type="tel" 
-            required 
-            value={formData.phone} 
-            onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Delivery Address</label>
-          <textarea 
-            required 
-            value={formData.address} 
-            onChange={(e) => setFormData({...formData, address: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} 
+          <textarea
+            required
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }}
           />
         </div>
-        
+
         <button
           onClick={handlePayClick}
           disabled={isProcessing}
