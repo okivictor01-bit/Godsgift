@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PaystackButton } from 'react-paystack';
+import { usePaystackPayment } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -22,7 +22,6 @@ export default function CheckoutPage() {
     address: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -36,6 +35,17 @@ export default function CheckoutPage() {
   }, [router]);
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+
+  const config = {
+    reference: (new Date()).getTime().toString(),
+    email: formData.email,
+    amount: totalAmount * 100,
+    publicKey: publicKey,
+  };
+
+  const initializePayment = usePaystackPayment(config);
 
   const onSuccess = async (reference: any) => {
     setIsProcessing(true);
@@ -85,27 +95,20 @@ export default function CheckoutPage() {
 
   const onClose = () => {
     console.log('Payment closed');
-    setShowPayment(false);
   };
 
-  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
-  
-  const componentProps: any = {
-    email: formData.email,
-    amount: totalAmount * 100,
-    publicKey: publicKey,
-    text: `Pay ₦${totalAmount.toLocaleString()}`,
-    onSuccess: onSuccess,
-    onClose: onClose,
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePay = () => {
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       alert('Please fill in all fields');
       return;
     }
-    setShowPayment(true);
+
+    if (!publicKey) {
+      alert('Payment system not configured');
+      return;
+    }
+
+    initializePayment({ onSuccess, onClose });
   };
 
   if (loading) {
@@ -113,19 +116,19 @@ export default function CheckoutPage() {
   }
 
   if (cart.length === 0) {
-    return null; 
+    return null;
   }
 
   return (
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
-      
+
       <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
         <h2 style={{ marginTop: 0, fontSize: '1.2rem' }}>Order Summary</h2>
         {cart.map((item) => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
             <span>{item.name} x {item.quantity}</span>
-            <span>{(item.price * item.quantity).toLocaleString()}</span>
+            <span>₦{(item.price * item.quantity).toLocaleString()}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
@@ -134,95 +137,66 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
-          <input 
-            type="text" 
-            required 
-            value={formData.name} 
-            onChange={(e) => setFormData({...formData, name: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="text"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Email Address</label>
-          <input 
-            type="email" 
-            required 
-            value={formData.email} 
-            onChange={(e) => setFormData({...formData, email: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="email"
+            required
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone Number</label>
-          <input 
-            type="tel" 
-            required 
-            value={formData.phone} 
-            onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          <input
+            type="tel"
+            required
+            value={formData.phone}
+            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
           />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Delivery Address</label>
-          <textarea 
-            required 
-            value={formData.address} 
-            onChange={(e) => setFormData({...formData, address: e.target.value})} 
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} 
+          <textarea
+            required
+            value={formData.address}
+            onChange={(e) => setFormData({...formData, address: e.target.value})}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }}
           />
         </div>
-        
-        {showPayment && (
-          <div style={{ 
-            marginTop: '1rem',
+
+        <button
+          onClick={handlePay}
+          disabled={isProcessing}
+          style={{
             width: '100%',
-            height: '60px',
-            backgroundColor: '#16a34a',
+            padding: '1rem',
+            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
+            color: 'white',
+            border: 'none',
             borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden'
-          }}>
-            <PaystackButton 
-              {...componentProps}
-              style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: 'transparent',
-                border: 'none',
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                color: 'white',
-                cursor: 'pointer'
-              }}
-            />
-          </div>
-        )}
-        
-        {!showPayment && (
-          <button
-            type="submit"
-            style={{
-              width: '100%',
-              padding: '1rem',
-              backgroundColor: '#16a34a',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              marginTop: '1rem'
-            }}
-          >
-            Continue to Payment
-          </button>
-        )}
-      </form>
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            marginTop: '1rem'
+          }}
+        >
+          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
+        </button>
+      </div>
     </main>
   );
 }
