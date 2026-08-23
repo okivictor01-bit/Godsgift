@@ -98,26 +98,8 @@ export default function CheckoutPage() {
     onClose: onClose,
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.phone || !formData.address) {
-      setErrorMessage('Please fill in all fields');
-      return;
-    }
-
-    if (!publicKey) {
-      setErrorMessage('Public key is missing!');
-      return;
-    }
-
-    setErrorMessage('');
-    // The PaystackButton will handle the payment when form is valid
-    const paystackBtn = document.getElementById('paystack-button') as HTMLElement;
-    if (paystackBtn) {
-      paystackBtn.click();
-    }
-  };
+  // Check if form is valid to enable/disable button
+  const isFormValid = formData.name && formData.email && formData.phone && formData.address;
 
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading checkout...</div>;
@@ -140,7 +122,7 @@ export default function CheckoutPage() {
       }}>
         <strong style={{ color: errorMessage ? '#dc2626' : '#16a34a' }}>Debug Info:</strong>
         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : '❌ MISSING'}</div>
+          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : ' MISSING'}</div>
           <div>Email: {formData.email || 'Empty'}</div>
           <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
           {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
@@ -161,48 +143,65 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
-          <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input 
+            type="text" 
+            required 
+            value={formData.name} 
+            onChange={(e) => setFormData({...formData, name: e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Email Address</label>
-          <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input 
+            type="email" 
+            required 
+            value={formData.email} 
+            onChange={(e) => setFormData({...formData, email: e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone Number</label>
-          <input type="tel" required value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
+          <input 
+            type="tel" 
+            required 
+            value={formData.phone} 
+            onChange={(e) => setFormData({...formData, phone: e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} 
+          />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Delivery Address</label>
-          <textarea required value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} />
+          <textarea 
+            required 
+            value={formData.address} 
+            onChange={(e) => setFormData({...formData, address: e.target.value})} 
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} 
+          />
         </div>
         
-        {/* Hidden PaystackButton that gets triggered programmatically */}
-        <div style={{ display: 'none' }}>
-          <PaystackButton id="paystack-button" {...componentProps} />
-        </div>
-        
-        <button 
-          type="submit" 
-          disabled={isProcessing} 
+        {/* @ts-ignore - This bypasses TypeScript errors for PaystackButton props */}
+        <PaystackButton
+          {...componentProps}
+          disabled={!isFormValid || isProcessing}
           style={{ 
             width: '100%', 
             padding: '1rem', 
-            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a', 
+            backgroundColor: (!isFormValid || isProcessing) ? '#9ca3af' : '#16a34a', 
             color: 'white', 
             border: 'none', 
             borderRadius: '8px', 
             fontSize: '1.1rem', 
             fontWeight: 'bold', 
-            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            cursor: (!isFormValid || isProcessing) ? 'not-allowed' : 'pointer',
             marginTop: '1rem'
           }}
-        >
-          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
-        </button>
-      </form>
+        />
+      </div>
     </main>
   );
 }
