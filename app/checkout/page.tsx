@@ -98,9 +98,6 @@ export default function CheckoutPage() {
     onClose: onClose,
   };
 
-  // Check if form is valid to enable/disable button
-  const isFormValid = formData.name && formData.email && formData.phone && formData.address;
-
   if (loading) {
     return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading checkout...</div>;
   }
@@ -124,7 +121,7 @@ export default function CheckoutPage() {
         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
           <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : ' MISSING'}</div>
           <div>Email: {formData.email || 'Empty'}</div>
-          <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
+          <div>Amount: {totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
           {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
         </div>
       </div>
@@ -184,20 +181,19 @@ export default function CheckoutPage() {
           />
         </div>
         
-        {/* @ts-ignore - This bypasses TypeScript errors for PaystackButton props */}
+        {/* @ts-ignore */}
         <PaystackButton
           {...componentProps}
-          disabled={!isFormValid || isProcessing}
           style={{ 
             width: '100%', 
             padding: '1rem', 
-            backgroundColor: (!isFormValid || isProcessing) ? '#9ca3af' : '#16a34a', 
+            backgroundColor: '#16a34a', 
             color: 'white', 
             border: 'none', 
             borderRadius: '8px', 
             fontSize: '1.1rem', 
             fontWeight: 'bold', 
-            cursor: (!isFormValid || isProcessing) ? 'not-allowed' : 'pointer',
+            cursor: 'pointer',
             marginTop: '1rem'
           }}
         />
