@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PaystackButton } from 'react-paystack';
+import { usePaystackPayment } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -89,13 +89,28 @@ export default function CheckoutPage() {
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  const componentProps: any = {
+  const config: any = {
+    reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
-    text: `Pay ₦${totalAmount.toLocaleString()}`,
-    onSuccess: onSuccess,
-    onClose: onClose,
+  };
+
+  const initializePayment = usePaystackPayment(config);
+
+  const handlePayClick = () => {
+    if (!formData.name || !formData.email || !formData.phone || !formData.address) {
+      setErrorMessage('Please fill in all fields');
+      return;
+    }
+
+    if (!publicKey) {
+      setErrorMessage('Payment system not configured');
+      return;
+    }
+
+    setErrorMessage('');
+    initializePayment({ onSuccess, onClose });
   };
 
   if (loading) {
@@ -131,7 +146,7 @@ export default function CheckoutPage() {
         {cart.map((item) => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
             <span>{item.name} x {item.quantity}</span>
-            <span>{(item.price * item.quantity).toLocaleString()}</span>
+            <span>₦{(item.price * item.quantity).toLocaleString()}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
@@ -181,29 +196,24 @@ export default function CheckoutPage() {
           />
         </div>
         
-        {/* PaystackButton with inline styles */}
-        <PaystackButton 
-          {...componentProps}
-          className="paystack-button"
-        />
-        
-        <style jsx>{`
-          .paystack-button {
-            width: 100%;
-            padding: 1rem;
-            background-color: #16a34a;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 1rem;
-          }
-          .paystack-button:hover {
-            background-color: #15803d;
-          }
-        `}</style>
+        <button
+          onClick={handlePayClick}
+          disabled={isProcessing}
+          style={{
+            width: '100%',
+            padding: '1rem',
+            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '1.1rem',
+            fontWeight: 'bold',
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            marginTop: '1rem'
+          }}
+        >
+          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
+        </button>
       </div>
     </main>
   );
