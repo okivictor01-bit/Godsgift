@@ -1,3 +1,4 @@
+}
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,13 +36,6 @@ export default function CheckoutPage() {
   }, [router]);
 
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-  const config = {
-    reference: (new Date()).getTime().toString(),
-    email: formData.email,
-    amount: totalAmount * 100, // Paystack expects amount in kobo
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
-  };
 
   const onSuccess = async (reference: any) => {
     setIsProcessing(true);
@@ -96,8 +90,15 @@ export default function CheckoutPage() {
     console.log('Payment closed');
   };
 
-  // Initialize Paystack hook
-  const initializePayment = usePaystackPayment(config);
+  // Initialize Paystack hook with callbacks in config
+  const initializePayment = usePaystackPayment({
+    reference: (new Date()).getTime().toString(),
+    email: formData.email,
+    amount: totalAmount * 100, // Paystack expects amount in kobo
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    onSuccess: onSuccess,
+    onClose: onClose
+  });
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,7 +107,7 @@ export default function CheckoutPage() {
       return;
     }
     // Trigger the Paystack popup
-    initializePayment(onSuccess, onClose);
+    initializePayment();
   };
 
   if (loading) {
