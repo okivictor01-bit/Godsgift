@@ -29,7 +29,32 @@ export default function CheckoutPage() {
     address: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paystackReady, setPaystackReady] = useState(false);
   const router = useRouter();
+
+  // Load Paystack script
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.PaystackPop) {
+      setPaystackReady(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = () => {
+      setPaystackReady(true);
+      console.log('Paystack loaded successfully');
+    };
+    script.onerror = () => {
+      console.error('Failed to load Paystack script');
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   useEffect(() => {
     const savedCart = localStorage.getItem('cart');
@@ -106,26 +131,31 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (typeof window === 'undefined' || !window.PaystackPop) {
-      alert('Paystack not loaded. Please refresh the page.');
+    if (!paystackReady || !window.PaystackPop) {
+      alert('Paystack is still loading. Please wait a moment and try again.');
       return;
     }
 
-    const paystack = window.PaystackPop.setup({
-      key: publicKey,
-      email: formData.email,
-      amount: totalAmount * 100,
-      currency: 'NGN',
-      ref: '' + Math.floor((Math.random() * 1000000000) + 1),
-      callback: function(response: any) {
-        onSuccess(response);
-      },
-      onClose: function() {
-        onClose();
-      }
-    });
+    try {
+      const paystack = window.PaystackPop.setup({
+        key: publicKey,
+        email: formData.email,
+        amount: totalAmount * 100,
+        currency: 'NGN',
+        ref: '' + Math.floor((Math.random() * 1000000000) + 1),
+        callback: function(response: any) {
+          onSuccess(response);
+        },
+        onClose: function() {
+          onClose();
+        }
+      });
 
-    paystack.openIframe();
+      paystack.openIframe();
+    } catch (error: any) {
+      console.error('Paystack error:', error);
+      alert(`Payment error: ${error.message || 'Please try again'}`);
+    }
   };
 
   if (loading) {
@@ -145,7 +175,7 @@ export default function CheckoutPage() {
         {cart.map((item) => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
             <span>{item.name} x {item.quantity}</span>
-            <span>₦{(item.price * item.quantity).toLocaleString()}</span>
+            <span>{(item.price * item.quantity).toLocaleString()}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
@@ -197,21 +227,21 @@ export default function CheckoutPage() {
 
         <button
           onClick={handlePay}
-          disabled={isProcessing}
+          disabled={isProcessing || !paystackReady}
           style={{
             width: '100%',
             padding: '1rem',
-            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
+            backgroundColor: (isProcessing || !paystackReady) ? '#9ca3af' : '#16a34a',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
             fontSize: '1.1rem',
             fontWeight: 'bold',
-            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            cursor: (isProcessing || !paystackReady) ? 'not-allowed' : 'pointer',
             marginTop: '1rem'
           }}
         >
-          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
+          {!paystackReady ? 'Loading Paystack...' : isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
         </button>
       </div>
     </main>
