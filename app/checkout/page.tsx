@@ -39,7 +39,6 @@ export default function CheckoutPage() {
   const onSuccess = async (reference: any) => {
     setIsProcessing(true);
     try {
-      // 1. Save order to Supabase 'orders' table
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert([
@@ -58,7 +57,6 @@ export default function CheckoutPage() {
 
       if (orderError) throw orderError;
 
-      // 2. Save items to 'order_items' table
       const orderItems = cart.map(item => ({
         order_id: orderData.id,
         product_id: item.id,
@@ -73,13 +71,12 @@ export default function CheckoutPage() {
 
       if (itemsError) throw itemsError;
 
-      // 3. Clear cart and redirect
       localStorage.removeItem('cart');
       alert('Payment successful! Thank you for your order.');
       router.push('/');
     } catch (error) {
       console.error('Error saving order:', error);
-      alert('Payment was successful, but there was an error saving your order. Please contact support.');
+      alert('Payment was successful, but there was an error saving your order.');
     } finally {
       setIsProcessing(false);
     }
@@ -89,15 +86,14 @@ export default function CheckoutPage() {
     console.log('Payment closed');
   };
 
-  // Initialize Paystack hook with callbacks in config
-  const initializePayment = usePaystackPayment({
+  const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
-    amount: totalAmount * 100, // Paystack expects amount in kobo
+    amount: totalAmount * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
-    onSuccess: onSuccess,
-    onClose: onClose
-  });
+  };
+
+  const initializePayment = usePaystackPayment(config);
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,8 +101,7 @@ export default function CheckoutPage() {
       alert('Please fill in all fields');
       return;
     }
-    // Trigger the Paystack popup
-    initializePayment();
+    initializePayment(onSuccess, onClose);
   };
 
   if (loading) {
@@ -121,7 +116,6 @@ export default function CheckoutPage() {
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
       
-      {/* Order Summary */}
       <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
         <h2 style={{ marginTop: 0, fontSize: '1.2rem' }}>Order Summary</h2>
         {cart.map((item) => (
@@ -136,64 +130,25 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* Checkout Form */}
       <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
-          <input
-            type="text"
-            required
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
-          />
+          <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Email Address</label>
-          <input
-            type="email"
-            required
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
-          />
+          <input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone Number</label>
-          <input
-            type="tel"
-            required
-            value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }}
-          />
+          <input type="tel" required value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Delivery Address</label>
-          <textarea
-            required
-            value={formData.address}
-            onChange={(e) => setFormData({...formData, address: e.target.value})}
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }}
-          />
+          <textarea required value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} />
         </div>
         
-        <button
-          type="submit"
-          disabled={isProcessing}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            cursor: isProcessing ? 'not-allowed' : 'pointer',
-            marginTop: '1rem'
-          }}
-        >
+        <button type="submit" disabled={isProcessing} style={{ width: '100%', padding: '1rem', backgroundColor: isProcessing ? '#9ca3af' : '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isProcessing ? 'not-allowed' : 'pointer', marginTop: '1rem' }}>
           {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
         </button>
       </form>
