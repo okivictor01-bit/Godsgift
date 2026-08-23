@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePaystackPayment } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -10,6 +9,14 @@ interface CartItem {
   name: string;
   price: number;
   quantity: number;
+}
+
+declare global {
+  interface Window {
+    PaystackPop: {
+      setup: (config: any) => any;
+    };
+  }
 }
 
 export default function CheckoutPage() {
@@ -37,15 +44,6 @@ export default function CheckoutPage() {
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
-
-  const config = {
-    reference: (new Date()).getTime().toString(),
-    email: formData.email,
-    amount: totalAmount * 100,
-    publicKey: publicKey,
-  };
-
-  const initializePayment = usePaystackPayment(config);
 
   const onSuccess = async (reference: any) => {
     setIsProcessing(true);
@@ -108,7 +106,26 @@ export default function CheckoutPage() {
       return;
     }
 
-    initializePayment({ onSuccess, onClose });
+    if (typeof window === 'undefined' || !window.PaystackPop) {
+      alert('Paystack not loaded. Please refresh the page.');
+      return;
+    }
+
+    const paystack = window.PaystackPop.setup({
+      key: publicKey,
+      email: formData.email,
+      amount: totalAmount * 100,
+      currency: 'NGN',
+      ref: '' + Math.floor((Math.random() * 1000000000) + 1),
+      callback: function(response: any) {
+        onSuccess(response);
+      },
+      onClose: function() {
+        onClose();
+      }
+    });
+
+    paystack.openIframe();
   };
 
   if (loading) {
