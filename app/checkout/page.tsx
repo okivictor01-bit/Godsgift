@@ -22,6 +22,7 @@ export default function CheckoutPage() {
     address: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -91,52 +92,44 @@ export default function CheckoutPage() {
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
-    amount: totalAmount * 100, // Convert to kobo
+    amount: totalAmount * 100,
     publicKey: publicKey,
   };
 
-  // Initialize Paystack hook
   let initializePayment;
   try {
     initializePayment = usePaystackPayment(config);
-  } catch (error) {
-    console.error('Error initializing Paystack hook:', error);
+  } catch (error: any) {
+    setErrorMessage(`Paystack init error: ${error.message}`);
   }
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    console.log('=== PAYMENT DEBUG ===');
-    console.log('Public Key:', publicKey ? publicKey.substring(0, 20) + '...' : 'MISSING');
-    console.log('Email:', formData.email);
-    console.log('Amount (Naira):', totalAmount);
-    console.log('Amount (Kobo):', totalAmount * 100);
-    console.log('Config:', config);
+    setErrorMessage('');
     
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
-      alert('Please fill in all fields');
+      setErrorMessage('Please fill in all fields');
       return;
     }
 
     if (!publicKey) {
+      setErrorMessage('Public key is missing!');
       alert('Payment system is not configured. Please contact support.');
       return;
     }
 
     if (!initializePayment) {
+      setErrorMessage('initializePayment is undefined');
       alert('Payment system failed to initialize. Please refresh the page.');
       return;
     }
     
     try {
-      console.log('Calling initializePayment...');
       initializePayment({ onSuccess, onClose });
-      console.log('Payment initialized successfully');
     } catch (error: any) {
-      console.error('Payment initialization error:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      alert(`Error initializing payment: ${error.message || 'Please try again'}`);
+      const errorMsg = error.message || 'Unknown error';
+      setErrorMessage(errorMsg);
+      alert(`Error: ${errorMsg}`);
     }
   };
 
@@ -151,6 +144,23 @@ export default function CheckoutPage() {
   return (
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
+      
+      {/* DEBUG INFO - Shows on screen */}
+      <div style={{ 
+        padding: '1rem', 
+        backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5', 
+        border: `2px solid ${errorMessage ? '#dc2626' : '#16a34a'}`,
+        borderRadius: '8px', 
+        marginBottom: '2rem' 
+      }}>
+        <strong style={{ color: errorMessage ? '#dc2626' : '#16a34a' }}>Debug Info:</strong>
+        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : '❌ MISSING'}</div>
+          <div>Email: {formData.email || 'Empty'}</div>
+          <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
+          {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
+        </div>
+      </div>
       
       <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
         <h2 style={{ marginTop: 0, fontSize: '1.2rem' }}>Order Summary</h2>
