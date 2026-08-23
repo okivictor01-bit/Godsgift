@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePaystackPayment } from 'react-paystack';
+import { PaystackButton } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -89,20 +89,17 @@ export default function CheckoutPage() {
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  // Config WITHOUT callbacks
-  const config = {
-    reference: (new Date()).getTime().toString(),
+  const componentProps = {
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
+    text: `Pay ₦${totalAmount.toLocaleString()}`,
+    onSuccess: onSuccess,
+    onClose: onClose,
   };
 
-  // Initialize hook with config (without callbacks)
-  const initializePayment = usePaystackPayment(config);
-
-  const handlePay = (e: React.FormEvent) => {
+  const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
     
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       setErrorMessage('Please fill in all fields');
@@ -111,17 +108,14 @@ export default function CheckoutPage() {
 
     if (!publicKey) {
       setErrorMessage('Public key is missing!');
-      alert('Payment system is not configured. Please contact support.');
       return;
     }
-    
-    try {
-      // Pass callbacks as an OBJECT argument
-      initializePayment({ onSuccess, onClose });
-    } catch (error: any) {
-      const errorMsg = error.message || 'Unknown error';
-      setErrorMessage(errorMsg);
-      alert(`Error: ${errorMsg}`);
+
+    setErrorMessage('');
+    // The PaystackButton will handle the payment when form is valid
+    const paystackBtn = document.getElementById('paystack-button') as HTMLElement;
+    if (paystackBtn) {
+      paystackBtn.click();
     }
   };
 
@@ -167,7 +161,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
           <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box' }} />
@@ -183,6 +177,11 @@ export default function CheckoutPage() {
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Delivery Address</label>
           <textarea required value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} />
+        </div>
+        
+        {/* Hidden PaystackButton that gets triggered programmatically */}
+        <div style={{ display: 'none' }}>
+          <PaystackButton id="paystack-button" {...componentProps} />
         </div>
         
         <button 
