@@ -96,12 +96,8 @@ export default function CheckoutPage() {
     publicKey: publicKey,
   };
 
-  let initializePayment;
-  try {
-    initializePayment = usePaystackPayment(config);
-  } catch (error: any) {
-    setErrorMessage(`Paystack init error: ${error.message}`);
-  }
+  // Hook must be called unconditionally at the top level (No try-catch here!)
+  const initializePayment = usePaystackPayment(config);
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,12 +111,6 @@ export default function CheckoutPage() {
     if (!publicKey) {
       setErrorMessage('Public key is missing!');
       alert('Payment system is not configured. Please contact support.');
-      return;
-    }
-
-    if (!initializePayment) {
-      setErrorMessage('initializePayment is undefined');
-      alert('Payment system failed to initialize. Please refresh the page.');
       return;
     }
     
@@ -145,7 +135,7 @@ export default function CheckoutPage() {
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
       
-      {/* DEBUG INFO - Shows on screen */}
+      {/* DEBUG INFO - Shows on screen so you can see it on mobile */}
       <div style={{ 
         padding: '1rem', 
         backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5', 
