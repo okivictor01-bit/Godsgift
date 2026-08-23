@@ -86,22 +86,27 @@ export default function CheckoutPage() {
     console.log('Payment closed');
   };
 
+  // 1. Put onSuccess and onClose INSIDE the config object
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    onSuccess: onSuccess,
+    onClose: onClose,
   };
 
+  // 2. Initialize the hook with the config
   const initializePayment = usePaystackPayment(config);
 
+  // 3. Call it with ZERO arguments
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       alert('Please fill in all fields');
       return;
     }
-    initializePayment(onSuccess, onClose);
+    initializePayment(); // <-- NO ARGUMENTS HERE
   };
 
   if (loading) {
