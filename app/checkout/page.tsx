@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { usePaystackPayment } from 'react-paystack';
+import { PaystackButton } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -22,7 +22,7 @@ export default function CheckoutPage() {
     address: ''
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [showPayment, setShowPayment] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -85,43 +85,27 @@ export default function CheckoutPage() {
 
   const onClose = () => {
     console.log('Payment closed');
+    setShowPayment(false);
   };
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  const config = {
-    reference: (new Date()).getTime().toString(),
+  const componentProps: any = {
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
+    text: `Pay ₦${totalAmount.toLocaleString()}`,
+    onSuccess: onSuccess,
+    onClose: onClose,
   };
 
-  const initializePayment = usePaystackPayment(config);
-
-  const handlePayClick = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
-      setErrorMessage('Please fill in all fields');
       alert('Please fill in all fields');
       return;
     }
-
-    if (!publicKey) {
-      setErrorMessage('Payment system not configured');
-      alert('Payment system not configured');
-      return;
-    }
-
-    try {
-      // ✅ Pass callbacks as an OBJECT with curly braces
-      initializePayment({ 
-        onSuccess: onSuccess, 
-        onClose: onClose 
-      });
-    } catch (error: any) {
-      const errorMsg = error?.message || String(error);
-      setErrorMessage(`Error: ${errorMsg}`);
-      alert(`Error: ${errorMsg}`);
-    }
+    setShowPayment(true);
   };
 
   if (loading) {
@@ -136,28 +120,12 @@ export default function CheckoutPage() {
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
       
-      <div style={{ 
-        padding: '1rem', 
-        backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5', 
-        border: `2px solid ${errorMessage ? '#dc2626' : '#16a34a'}`,
-        borderRadius: '8px', 
-        marginBottom: '2rem' 
-      }}>
-        <strong style={{ color: errorMessage ? '#dc2626' : '#16a34a' }}>Debug Info:</strong>
-        <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
-          <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : ' MISSING'}</div>
-          <div>Email: {formData.email || 'Empty'}</div>
-          <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
-          {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
-        </div>
-      </div>
-      
       <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '1px solid #e0e0e0', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
         <h2 style={{ marginTop: 0, fontSize: '1.2rem' }}>Order Summary</h2>
         {cart.map((item) => (
           <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.95rem' }}>
             <span>{item.name} x {item.quantity}</span>
-            <span>{(item.price * item.quantity).toLocaleString()}</span>
+            <span>₦{(item.price * item.quantity).toLocaleString()}</span>
           </div>
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
@@ -166,7 +134,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
           <input 
@@ -207,25 +175,32 @@ export default function CheckoutPage() {
           />
         </div>
         
-        <button
-          onClick={handlePayClick}
-          disabled={isProcessing}
-          style={{
-            width: '100%',
-            padding: '1rem',
-            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1.1rem',
-            fontWeight: 'bold',
-            cursor: isProcessing ? 'not-allowed' : 'pointer',
-            marginTop: '1rem'
-          }}
-        >
-          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
-        </button>
-      </div>
+        {showPayment && (
+          <div style={{ marginTop: '1rem' }}>
+            <PaystackButton {...componentProps} />
+          </div>
+        )}
+        
+        {!showPayment && (
+          <button
+            type="submit"
+            style={{
+              width: '100%',
+              padding: '1rem',
+              backgroundColor: '#16a34a',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              marginTop: '1rem'
+            }}
+          >
+            Continue to Payment
+          </button>
+        )}
+      </form>
     </main>
   );
 }
