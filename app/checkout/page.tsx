@@ -86,29 +86,32 @@ export default function CheckoutPage() {
     console.log('Payment closed');
   };
 
-  // Check if public key exists
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  if (!publicKey) {
-    console.error('Paystack Public Key is missing!');
-  }
-
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
-    amount: totalAmount * 100,
+    amount: totalAmount * 100, // Convert to kobo
     publicKey: publicKey,
   };
 
-  // Initialize Paystack
-  const initializePayment = usePaystackPayment(config);
+  // Initialize Paystack hook
+  let initializePayment;
+  try {
+    initializePayment = usePaystackPayment(config);
+  } catch (error) {
+    console.error('Error initializing Paystack hook:', error);
+  }
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Pay button clicked!');
-    console.log('Form data:', formData);
-    console.log('Public Key:', publicKey ? 'Exists' : 'MISSING!');
+    console.log('=== PAYMENT DEBUG ===');
+    console.log('Public Key:', publicKey ? publicKey.substring(0, 20) + '...' : 'MISSING');
+    console.log('Email:', formData.email);
+    console.log('Amount (Naira):', totalAmount);
+    console.log('Amount (Kobo):', totalAmount * 100);
+    console.log('Config:', config);
     
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       alert('Please fill in all fields');
@@ -119,13 +122,21 @@ export default function CheckoutPage() {
       alert('Payment system is not configured. Please contact support.');
       return;
     }
+
+    if (!initializePayment) {
+      alert('Payment system failed to initialize. Please refresh the page.');
+      return;
+    }
     
     try {
-      console.log('Initializing payment...');
+      console.log('Calling initializePayment...');
       initializePayment({ onSuccess, onClose });
-    } catch (error) {
+      console.log('Payment initialized successfully');
+    } catch (error: any) {
       console.error('Payment initialization error:', error);
-      alert('Error initializing payment. Please try again.');
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      alert(`Error initializing payment: ${error.message || 'Please try again'}`);
     }
   };
 
