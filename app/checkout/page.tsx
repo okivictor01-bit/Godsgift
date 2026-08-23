@@ -89,17 +89,15 @@ export default function CheckoutPage() {
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  // ✅ Put onSuccess and onClose INSIDE the config
+  // Config WITHOUT callbacks
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
-    onSuccess: onSuccess,
-    onClose: onClose,
   };
 
-  // Initialize with config that includes callbacks
+  // Initialize hook with config (without callbacks)
   const initializePayment = usePaystackPayment(config);
 
   const handlePay = (e: React.FormEvent) => {
@@ -118,8 +116,8 @@ export default function CheckoutPage() {
     }
     
     try {
-      // ✅ Call with NO arguments - callbacks are already in config
-      initializePayment();
+      // Pass callbacks as an OBJECT argument
+      initializePayment({ onSuccess, onClose });
     } catch (error: any) {
       const errorMsg = error.message || 'Unknown error';
       setErrorMessage(errorMsg);
