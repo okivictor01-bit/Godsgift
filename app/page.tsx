@@ -28,6 +28,21 @@ export default function Home() {
     }
   }
 
+  const addToCart = (product: Product) => {
+    const savedCart = localStorage.getItem('cart');
+    const cart = savedCart ? JSON.parse(savedCart) : [];
+    const existingItem = cart.find((item: any) => item.id === product.id);
+    
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      cart.push({ ...product, quantity: 1 });
+    }
+    
+    localStorage.setItem('cart', JSON.stringify(cart));
+    alert(`${product.name} added to cart!`);
+  };
+
   return (
     <main style={{ 
       padding: '2rem', 
@@ -141,6 +156,7 @@ export default function Home() {
                 </div>
                 
                 <button
+                  onClick={() => addToCart(product)}
                   style={{
                     width: '100%',
                     marginTop: '1rem',
