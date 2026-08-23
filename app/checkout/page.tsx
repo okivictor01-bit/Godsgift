@@ -108,8 +108,6 @@ export default function CheckoutPage() {
     }
   };
 
-  const onClose = () => console.log('Payment closed');
-
   const handlePay = () => {
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       alert('Please fill in all fields');
@@ -131,8 +129,12 @@ export default function CheckoutPage() {
         amount: totalAmount * 100,
         currency: 'NGN',
         ref: '' + Math.floor((Math.random() * 1000000000) + 1),
-        callback: onSuccess,
-        onClose: onClose
+        callback: function(response: any) {
+          onSuccess(response);
+        },
+        onClose: function() {
+          console.log('Payment closed');
+        }
       });
       paystack.openIframe();
     } catch (error: any) {
