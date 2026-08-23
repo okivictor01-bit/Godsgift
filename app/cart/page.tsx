@@ -1,8 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CartItem } from '../../types';
 import { useRouter } from 'next/navigation';
+
+interface CartItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  quantity: number;
+}
 
 export default function CartPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -18,10 +26,10 @@ export default function CartPage() {
   }, []);
 
   const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
     const updatedCart = cart.map(item =>
       item.id === productId ? { ...item, quantity: newQuantity } : item
-    ).filter(item => item.quantity > 0);
-    
+    );
     setCart(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
@@ -36,7 +44,7 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <div style={{ padding: '2rem', textAlign: 'center', fontFamily: 'system-ui, sans-serif' }}>
         <p>Loading cart...</p>
       </div>
     );
@@ -44,7 +52,7 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <main style={{ padding: '2rem', textAlign: 'center', fontFamily: 'system-ui, sans-serif', maxWidth: '800px', margin: '0 auto' }}>
         <h1 style={{ marginBottom: '1rem' }}>Your Cart is Empty</h1>
         <p style={{ marginBottom: '2rem', color: '#666' }}>Add some products to get started!</p>
         <button
@@ -61,12 +69,12 @@ export default function CartPage() {
         >
           Continue Shopping
         </button>
-      </div>
+      </main>
     );
   }
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <main style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Shopping Cart</h1>
       
       <div style={{ marginBottom: '2rem' }}>
@@ -79,7 +87,8 @@ export default function CartPage() {
               padding: '1.5rem',
               border: '1px solid #e0e0e0',
               borderRadius: '8px',
-              marginBottom: '1rem'
+              marginBottom: '1rem',
+              alignItems: 'center'
             }}
           >
             {item.image_url && (
@@ -87,8 +96,8 @@ export default function CartPage() {
                 src={item.image_url}
                 alt={item.name}
                 style={{
-                  width: '100px',
-                  height: '100px',
+                  width: '80px',
+                  height: '80px',
                   objectFit: 'cover',
                   borderRadius: '8px'
                 }}
@@ -96,38 +105,23 @@ export default function CartPage() {
             )}
             
             <div style={{ flex: 1 }}>
-              <h3 style={{ margin: '0 0 0.5rem 0' }}>{item.name}</h3>
-              <p style={{ color: '#666', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
-                {item.description}
-              </p>
+              <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.1rem' }}>{item.name}</h3>
               <p style={{ fontWeight: 'bold', color: '#2563eb', margin: '0.5rem 0' }}>
-                ₦{item.price.toLocaleString()}
+                {item.price.toLocaleString()}
               </p>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', border: '1px solid #e0e0e0', borderRadius: '4px', padding: '0.25rem' }}>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: 'white'
-                    }}
+                    style={{ padding: '0.25rem 0.75rem', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
                   >
                     -
                   </button>
-                  <span style={{ fontWeight: 'bold' }}>{item.quantity}</span>
+                  <span style={{ fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    style={{
-                      padding: '0.25rem 0.75rem',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: 'white'
-                    }}
+                    style={{ padding: '0.25rem 0.75rem', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem' }}
                   >
                     +
                   </button>
@@ -136,12 +130,13 @@ export default function CartPage() {
                 <button
                   onClick={() => removeFromCart(item.id)}
                   style={{
-                    padding: '0.25rem 0.75rem',
-                    backgroundColor: '#dc2626',
-                    color: 'white',
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#fee2e2',
+                    color: '#dc2626',
                     border: 'none',
                     borderRadius: '4px',
-                    cursor: 'pointer'
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
                   }}
                 >
                   Remove
@@ -149,8 +144,8 @@ export default function CartPage() {
               </div>
             </div>
             
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+            <div style={{ textAlign: 'right', minWidth: '100px' }}>
+              <p style={{ fontWeight: 'bold', fontSize: '1.1rem', margin: 0 }}>
                 ₦{(item.price * item.quantity).toLocaleString()}
               </p>
             </div>
@@ -179,7 +174,7 @@ export default function CartPage() {
           style={{
             width: '100%',
             padding: '1rem',
-            backgroundColor: '#2563eb',
+            backgroundColor: '#16a34a',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
