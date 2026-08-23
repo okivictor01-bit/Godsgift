@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PaystackButton } from 'react-paystack';
+import { usePaystackPayment } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
 
 interface CartItem {
@@ -43,7 +43,7 @@ export default function CheckoutPage() {
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
   };
 
-  const handlePaystackSuccessAction = async (reference: any) => {
+  const onSuccess = async (reference: any) => {
     setIsProcessing(true);
     try {
       // 1. Save order to Supabase 'orders' table
@@ -92,15 +92,21 @@ export default function CheckoutPage() {
     }
   };
 
-  const handlePaystackCloseAction = () => {
+  const onClose = () => {
     console.log('Payment closed');
   };
 
-  const componentProps = {
-    ...config,
-    text: isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`,
-    onSuccess: (reference: any) => handlePaystackSuccessAction(reference),
-    onClose: handlePaystackCloseAction,
+  // Initialize Paystack hook
+  const initializePayment = usePaystackPayment(config);
+
+  const handlePay = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.phone || !formData.address) {
+      alert('Please fill in all fields');
+      return;
+    }
+    // Trigger the Paystack popup
+    initializePayment(onSuccess, onClose);
   };
 
   if (loading) {
@@ -131,7 +137,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Checkout Form */}
-      <form onSubmit={(e) => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <form onSubmit={handlePay} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Full Name</label>
           <input
@@ -172,21 +178,24 @@ export default function CheckoutPage() {
           />
         </div>
         
-        <PaystackButton
-          {...componentProps}
+        <button
+          type="submit"
+          disabled={isProcessing}
           style={{
             width: '100%',
             padding: '1rem',
-            backgroundColor: '#16a34a',
+            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
             fontSize: '1.1rem',
             fontWeight: 'bold',
-            cursor: 'pointer',
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
             marginTop: '1rem'
           }}
-        />
+        >
+          {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
+        </button>
       </form>
     </main>
   );
