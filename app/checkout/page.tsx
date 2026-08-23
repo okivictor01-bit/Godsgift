@@ -63,27 +63,35 @@ export default function CheckoutPage() {
   const onSuccess = async (reference: any) => {
     setIsProcessing(true);
     try {
+      // Build insert object WITHOUT user_id to avoid foreign key constraint issues
+      const orderDataToInsert: any = {
+        total_amount: totalAmount,
+        paystack_reference: reference.reference,
+        status: 'paid',
+        shipping_address: {
+          name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          email: formData.email
+        }
+      };
+
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .insert([
-          {
-            total_amount: totalAmount,
-            paystack_reference: reference.reference,
-            status: 'paid',
-            shipping_address: {
-              name: formData.name,
-              phone: formData.phone,
-              address: formData.address,
-              email: formData.email
-            }
-          }
-        ])
+        .insert([orderDataToInsert])
         .select()
         .single();
 
-      if (orderError) throw new Error(`Order failed: ${orderError.message}`);
-      if (!orderData) throw new Error('No order data returned');
+      if (orderError) {
+        console.error('Order error:', orderError);
+        throw new Error(`Order failed: ${orderError.message}`);
+      }
+      
+      if (!orderData) {
+        throw new Error('No order data returned');
+      }
 
+      // Insert order items
       const orderItems = cart.map(item => ({
         order_id: orderData.id,
         product_id: item.id,
@@ -92,8 +100,14 @@ export default function CheckoutPage() {
         price: item.price
       }));
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-      if (itemsError) throw new Error(`Items failed: ${itemsError.message}`);
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) {
+        console.error('Items error:', itemsError);
+        throw new Error(`Items failed: ${itemsError.message}`);
+      }
 
       localStorage.removeItem('cart');
       alert('Payment successful! Thank you for your order.');
