@@ -86,24 +86,47 @@ export default function CheckoutPage() {
     console.log('Payment closed');
   };
 
-  // Config WITHOUT callbacks
+  // Check if public key exists
+  const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
+  
+  if (!publicKey) {
+    console.error('Paystack Public Key is missing!');
+  }
+
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '',
+    publicKey: publicKey,
   };
 
+  // Initialize Paystack
   const initializePayment = usePaystackPayment(config);
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('Pay button clicked!');
+    console.log('Form data:', formData);
+    console.log('Public Key:', publicKey ? 'Exists' : 'MISSING!');
+    
     if (!formData.name || !formData.email || !formData.phone || !formData.address) {
       alert('Please fill in all fields');
       return;
     }
-    // Pass callbacks as an OBJECT
-    initializePayment({ onSuccess, onClose });
+
+    if (!publicKey) {
+      alert('Payment system is not configured. Please contact support.');
+      return;
+    }
+    
+    try {
+      console.log('Initializing payment...');
+      initializePayment({ onSuccess, onClose });
+    } catch (error) {
+      console.error('Payment initialization error:', error);
+      alert('Error initializing payment. Please try again.');
+    }
   };
 
   if (loading) {
@@ -128,7 +151,7 @@ export default function CheckoutPage() {
         ))}
         <div style={{ borderTop: '1px solid #e0e0e0', paddingTop: '1rem', marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
           <span>Total</span>
-          <span style={{ color: '#2563eb' }}>₦{totalAmount.toLocaleString()}</span>
+          <span style={{ color: '#2563eb' }}>{totalAmount.toLocaleString()}</span>
         </div>
       </div>
 
@@ -150,7 +173,22 @@ export default function CheckoutPage() {
           <textarea required value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e0e0e0', borderRadius: '8px', boxSizing: 'border-box', minHeight: '80px' }} />
         </div>
         
-        <button type="submit" disabled={isProcessing} style={{ width: '100%', padding: '1rem', backgroundColor: isProcessing ? '#9ca3af' : '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: isProcessing ? 'not-allowed' : 'pointer', marginTop: '1rem' }}>
+        <button 
+          type="submit" 
+          disabled={isProcessing} 
+          style={{ 
+            width: '100%', 
+            padding: '1rem', 
+            backgroundColor: isProcessing ? '#9ca3af' : '#16a34a', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '8px', 
+            fontSize: '1.1rem', 
+            fontWeight: 'bold', 
+            cursor: isProcessing ? 'not-allowed' : 'pointer',
+            marginTop: '1rem'
+          }}
+        >
           {isProcessing ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
         </button>
       </form>
