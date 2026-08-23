@@ -89,14 +89,17 @@ export default function CheckoutPage() {
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
+  // ✅ Put onSuccess and onClose INSIDE the config
   const config = {
     reference: (new Date()).getTime().toString(),
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
+    onSuccess: onSuccess,
+    onClose: onClose,
   };
 
-  // Hook must be called unconditionally at the top level (No try-catch here!)
+  // Initialize with config that includes callbacks
   const initializePayment = usePaystackPayment(config);
 
   const handlePay = (e: React.FormEvent) => {
@@ -115,7 +118,8 @@ export default function CheckoutPage() {
     }
     
     try {
-      initializePayment({ onSuccess, onClose });
+      // ✅ Call with NO arguments - callbacks are already in config
+      initializePayment();
     } catch (error: any) {
       const errorMsg = error.message || 'Unknown error';
       setErrorMessage(errorMsg);
@@ -135,7 +139,6 @@ export default function CheckoutPage() {
     <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
       <h1 style={{ marginBottom: '2rem', textAlign: 'center' }}>Checkout</h1>
       
-      {/* DEBUG INFO - Shows on screen so you can see it on mobile */}
       <div style={{ 
         padding: '1rem', 
         backgroundColor: errorMessage ? '#fee2e2' : '#d1fae5', 
