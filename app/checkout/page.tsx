@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { PaystackButton } from 'react-paystack';
 import { supabase } from '../../lib/supabaseClient';
@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const paystackButtonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -97,6 +98,7 @@ export default function CheckoutPage() {
     text: `Pay ₦${totalAmount.toLocaleString()}`,
     onSuccess: onSuccess,
     onClose: onClose,
+    ref: paystackButtonRef,
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,6 +108,13 @@ export default function CheckoutPage() {
       return;
     }
     setShowPayment(true);
+    
+    // Trigger Paystack button click after it renders
+    setTimeout(() => {
+      if (paystackButtonRef.current) {
+        paystackButtonRef.current.click();
+      }
+    }, 100);
   };
 
   if (loading) {
