@@ -89,7 +89,7 @@ export default function CheckoutPage() {
 
   const publicKey = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || '';
   
-  const componentProps = {
+  const componentProps: any = {
     email: formData.email,
     amount: totalAmount * 100,
     publicKey: publicKey,
@@ -121,7 +121,7 @@ export default function CheckoutPage() {
         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
           <div>Public Key: {publicKey ? publicKey.substring(0, 15) + '...' : ' MISSING'}</div>
           <div>Email: {formData.email || 'Empty'}</div>
-          <div>Amount: {totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
+          <div>Amount: ₦{totalAmount.toLocaleString()} ({totalAmount * 100} kobo)</div>
           {errorMessage && <div style={{ marginTop: '0.5rem', color: '#dc2626', fontWeight: 'bold' }}>Error: {errorMessage}</div>}
         </div>
       </div>
@@ -181,22 +181,17 @@ export default function CheckoutPage() {
           />
         </div>
         
-        {/* @ts-ignore */}
-        <PaystackButton
-          {...componentProps}
-          style={{ 
-            width: '100%', 
-            padding: '1rem', 
-            backgroundColor: '#16a34a', 
-            color: 'white', 
-            border: 'none', 
-            borderRadius: '8px', 
-            fontSize: '1.1rem', 
-            fontWeight: 'bold', 
-            cursor: 'pointer',
-            marginTop: '1rem'
-          }}
-        />
+        {/* Wrapper div for styling */}
+        <div style={{ 
+          width: '100%', 
+          padding: '1rem', 
+          backgroundColor: '#16a34a', 
+          borderRadius: '8px',
+          marginTop: '1rem',
+          textAlign: 'center'
+        }}>
+          <PaystackButton {...componentProps} />
+        </div>
       </div>
     </main>
   );
