@@ -1,44 +1,54 @@
-import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import '@/app/globals.css';
-import Footer from '@/app/components/Footer';
-import WhatsAppButton from '@/app/components/WhatsAppButton';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata: Metadata = {
-  title: "God'sGift Essence - Premium Fragrances & Body Care",
-  description: 'Scented by Grace, Made to Leave a Mark. Shop authentic perfumes, body sprays, and skincare products. Nationwide delivery across Nigeria.',
-  keywords: 'perfume, fragrance, body spray, skincare, Nigeria, Godsgift, essence, beauty',
-  authors: [{ name: "God'sGift Essence" }],
-  openGraph: {
-    title: "God'sGift Essence - Premium Fragrances",
-    description: 'Scented by Grace, Made to  Leave a Mark',
-    type: 'website',
-    locale: 'en_NG',
-    siteName: "God'sGift Essence",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
-
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/logo.png" type="image/png" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
       <body className={inter.className}>
         {children}
-        <Footer />
-        <WhatsAppButton />
+        
+        {/* Simple Test Footer */}
+        <div style={{ 
+          backgroundColor: '#1a1a1a', 
+          color: 'white', 
+          padding: '2rem', 
+          textAlign: 'center',
+          marginTop: '2rem'
+        }}>
+          <h3>God'sGift Essence</h3>
+          <p>Scented by Grace, Made to Leave a Mark</p>
+          <p style={{ fontSize: '0.8rem', marginTop: '1rem', color: '#9ca3af' }}>
+            © 2026 All Rights Reserved
+          </p>
+        </div>
+
+        {/* Simple WhatsApp Button */}
+        <a 
+          href="https://wa.me/2348000000000" 
+          target="_blank"
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '60px',
+            height: '60px',
+            backgroundColor: '#25D366',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            zIndex: 1000,
+            textDecoration: 'none'
+          }}
+        >
+          <span style={{ color: 'white', fontSize: '2rem' }}></span>
+        </a>
       </body>
     </html>
   );
