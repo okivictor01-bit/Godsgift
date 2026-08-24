@@ -31,7 +31,7 @@ export default function Header() {
           }}>
             <img 
               src="/logo.png" 
-              alt="Godsgift Store"
+              alt="God'sGift Essence"
               style={{
                 height: '50px',
                 width: 'auto',
