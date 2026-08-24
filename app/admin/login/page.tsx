@@ -26,7 +26,7 @@ export default function AdminLogin() {
       setLoading(false);
     } else {
       // Login successful, redirect to admin dashboard
-      router.push('/admin/dashboard');
+      router.push('/admin');
     }
   };
 
