@@ -107,7 +107,7 @@ export default function FAQ() {
         </a>
       </div>
 
-      <Footer />
+      
     </main>
   );
 }
