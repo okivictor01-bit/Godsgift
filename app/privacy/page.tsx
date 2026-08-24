@@ -67,7 +67,7 @@ export default function Privacy() {
         </p>
       </section>
 
-      <Footer />
+    
     </main>
   );
 }
