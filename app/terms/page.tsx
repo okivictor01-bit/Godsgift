@@ -92,7 +92,7 @@ export default function Terms() {
         </p>
       </section>
 
-      <Footer />
+      
     </main>
   );
 }
