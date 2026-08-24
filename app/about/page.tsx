@@ -63,7 +63,7 @@ export default function About() {
         </a>
       </section>
 
-      <Footer />
+    
     </main>
   );
 }
