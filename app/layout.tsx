@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   authors: [{ name: "God'sGift Essence" }],
   openGraph: {
     title: "God'sGift Essence - Premium Fragrances",
-    description: 'Scented by Grace, Made to Leave a Mark',
+    description: 'Scented by Grace, Made to  Leave a Mark',
     type: 'website',
     locale: 'en_NG',
     siteName: "God'sGift Essence",
