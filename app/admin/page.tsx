@@ -13,7 +13,7 @@ export default function AdminDashboard() {
   // CHANGE THIS PASSWORD TO SOMETHING SECURE
   const ADMIN_PASSWORD = 'godsgift2024'; 
 
-  const handleLogin = (e) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
@@ -25,7 +25,6 @@ export default function AdminDashboard() {
 
   const fetchOrders = async () => {
     setLoading(true);
-    // Fetch orders and their items in one go
     const { data, error } = await supabase
       .from('orders')
       .select('*, order_items(*)')
@@ -40,15 +39,14 @@ export default function AdminDashboard() {
     setLoading(false);
   };
 
-  const toggleOrder = (orderId) => {
+  const toggleOrder = (orderId: any) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
-  // --- LOGIN SCREEN ---
   if (!isAuthenticated) {
     return (
       <main style={{ padding: '2rem', maxWidth: '400px', margin: '50px auto', textAlign: 'center' }}>
-        <h2 style={{ color: '#d4af37' }}>Admin Login</h2>
+        <h2 style={{ color: '#d4af37' }}>God'sGift Essence Admin</h2>
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <input
             type="password"
@@ -66,7 +64,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // --- DASHBOARD ---
   return (
     <main style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -83,9 +80,8 @@ export default function AdminDashboard() {
           {orders.length === 0 ? (
             <p>No orders found.</p>
           ) : (
-            orders.map((order) => (
+            orders.map((order: any) => (
               <div key={order.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-                {/* Order Header */}
                 <div 
                   onClick={() => toggleOrder(order.id)}
                   style={{ 
@@ -113,11 +109,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* Order Details (Items) */}
                 {expandedOrder === order.id && (
                   <div style={{ padding: '1rem', borderTop: '1px solid #e5e7eb', backgroundColor: '#f9fafb' }}>
                     <h4 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Order Items:</h4>
-                    {order.order_items?.map((item) => (
+                    {order.order_items?.map((item: any) => (
                       <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
                         <span>{item.product_name} x {item.quantity}</span>
                         <span>₦{item.price?.toLocaleString()}</span>
