@@ -7,7 +7,7 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const phoneNumber = '2348000000000'; // REPLACE with actual number
+    const phoneNumber = '2348149189463'; // REPLACE with actual number
     const text = `Hello God'sGift Essence!%0A%0AName: ${formData.name}%0AEmail: ${formData.email}%0A%0AMessage: ${formData.message}`;
     window.open(`https://wa.me/${phoneNumber}?text=${text}`, '_blank');
     setSent(true);
@@ -29,7 +29,7 @@ export default function Contact() {
             <h3 style={{ color: '#1a1a1a', marginBottom: '0.5rem' }}>WhatsApp</h3>
             <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '1rem' }}>Fastest response</p>
             <a 
-              href="https://wa.me/2348000000000" 
+              href="https://wa.me/2348149189463" 
               target="_blank"
               style={{ color: '#25D366', textDecoration: 'none', fontWeight: 'bold' }}
             >
