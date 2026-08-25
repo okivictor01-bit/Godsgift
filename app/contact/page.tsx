@@ -1,6 +1,5 @@
 'use client';
 import { useState } from 'react';
-import Footer from '@/components/Footer';
 
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
