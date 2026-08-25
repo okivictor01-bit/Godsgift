@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google';
 import Link from 'next/link';
+import Script from 'next/script'; // Import Next.js Script component
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -10,6 +11,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Paystack Inline Script - Loads the payment library */}
+        <script src="https://js.paystack.co/v1/inline.js"></script>
+      </head>
       <body className={inter.className} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', margin: 0 }}>
 
         {/* Main Content Area */}
@@ -65,7 +70,7 @@ export default function RootLayout({
             <div style={{ flex: '1 1 200px' }}>
               <h4 style={{ marginBottom: '1rem', color: '#d4af37' }}>Contact Us</h4>
               <p style={{ color: '#d1d5db', fontSize: '0.9rem', lineHeight: '1.8' }}>
-                📧 info@godsgift.site<br />
+                 info@godsgift.site<br />
                  Nigeria
               </p>
             </div>
