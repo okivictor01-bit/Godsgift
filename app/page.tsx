@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import Link from 'next/link';
 
 interface Product {
   id: string;
@@ -16,9 +17,11 @@ interface Product {
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     fetchProducts();
+    updateCartCount();
   }, []);
 
   const fetchProducts = async () => {
@@ -32,6 +35,12 @@ export default function Home() {
       setProducts(data);
     }
     setLoading(false);
+  };
+
+  const updateCartCount = () => {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const count = cart.reduce((sum: number, item: any) => sum + item.quantity, 0);
+    setCartCount(count);
   };
 
   const addToCart = (product: Product) => {
@@ -52,11 +61,49 @@ export default function Home() {
     }
 
     localStorage.setItem('cart', JSON.stringify(cart));
+    updateCartCount();
     alert(`${product.name} added to cart!`);
   };
 
   return (
     <main>
+      {/* Navigation Bar */}
+      <nav style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        padding: '1rem',
+        display: 'flex',
+        justifyContent: 'flex-end',
+        gap: '1rem'
+      }}>
+        <Link href="/cart" style={{
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          color: '#1a1a1a',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '8px',
+          textDecoration: 'none',
+          fontWeight: 'bold',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem'
+        }}>
+          🛒 Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}>{cartCount}</span>}
+        </Link>
+        <Link href="/orders" style={{
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          color: '#1a1a1a',
+          padding: '0.75rem 1.5rem',
+          borderRadius: '8px',
+          textDecoration: 'none',
+          fontWeight: 'bold'
+        }}>
+          📦 Track Order
+        </Link>
+      </nav>
+
       {/* Hero Section */}
       <section style={{
         position: 'relative',
