@@ -35,9 +35,9 @@ export default function Checkout() {
     e.preventDefault();
     setLoading(true);
 
-    // Check if Paystack is loaded
-    if (typeof window !== 'undefined' && window.PaystackPop) {
-      const handler = window.PaystackPop.setup({
+    // Check if Paystack is loaded (using 'as any' to fix TypeScript error)
+    if (typeof window !== 'undefined' && (window as any).PaystackPop) {
+      const handler = (window as any).PaystackPop.setup({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: formData.email,
         amount: totalAmount * 100, // Paystack expects amount in kobo
@@ -86,7 +86,7 @@ export default function Checkout() {
         ))}
         <div style={{ borderTop: '1px solid #e5e7eb', marginTop: '1rem', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: '1.2rem' }}>
           <span>Total</span>
-          <span>{totalAmount.toLocaleString()}</span>
+          <span>₦{totalAmount.toLocaleString()}</span>
         </div>
       </div>
 
