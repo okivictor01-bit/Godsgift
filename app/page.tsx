@@ -8,6 +8,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  original_price?: number;
   description: string;
   image_url: string;
   category: string;
@@ -63,6 +64,12 @@ export default function Home() {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
     alert(`${product.name} added to cart!`);
+  };
+
+  // Calculate discount percentage
+  const calculateDiscount = (original: number, sale: number) => {
+    if (!original || original <= sale) return null;
+    return Math.round(((original - sale) / original) * 100);
   };
 
   return (
@@ -141,14 +148,32 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {products.map((product) => {
               const isOutOfStock = product.stock === 0 || product.stock === null;
+              const discount = calculateDiscount(product.original_price, product.price);
               
               return (
                 <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                  <img 
-                    src={product.image_url || 'https://via.placeholder.com/400x300?text=No+Image'} 
-                    alt={product.name}
-                    style={{ width: '100%', height: '250px', objectFit: 'cover' }}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <img 
+                      src={product.image_url || 'https://via.placeholder.com/400x300?text=No+Image'} 
+                      alt={product.name}
+                      style={{ width: '100%', height: '250px', objectFit: 'cover' }}
+                    />
+                    {discount && discount > 0 && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        backgroundColor: '#dc2626',
+                        color: 'white',
+                        padding: '0.4rem 0.8rem',
+                        borderRadius: '6px',
+                        fontWeight: 'bold',
+                        fontSize: '0.9rem'
+                      }}>
+                        {discount}% OFF
+                      </div>
+                    )}
+                  </div>
                   
                   <div style={{ padding: '1.5rem' }}>
                     <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#1a1a1a' }}>{product.name}</h2>
@@ -156,10 +181,30 @@ export default function Home() {
                       {product.description || 'No description available.'}
                     </p>
 
+                    {/* Price Display with Strike Price */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#2563eb' }}>
-                        ₦{product.price?.toLocaleString()}
-                      </span>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#2563eb' }}>
+                            ₦{product.price?.toLocaleString()}
+                          </span>
+                          {product.original_price && product.original_price > product.price && (
+                            <span style={{ 
+                              textDecoration: 'line-through', 
+                              color: '#9ca3af', 
+                              fontSize: '1.1rem',
+                              fontWeight: '500'
+                            }}>
+                              ₦{product.original_price.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        {discount && discount > 0 && (
+                          <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0', fontWeight: '600' }}>
+                            Save ₦{(product.original_price - product.price).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                       <span style={{ 
                         fontSize: '0.85rem', 
                         padding: '0.4rem 0.8rem', 
