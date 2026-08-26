@@ -67,7 +67,7 @@ export default function Home() {
 
   return (
     <main>
-      {/* Navigation Bar */}
+      {/* Navigation Bar - Cart Button Only */}
       <nav style={{
         position: 'absolute',
         top: 0,
@@ -91,16 +91,6 @@ export default function Home() {
           gap: '0.5rem'
         }}>
           🛒 Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}>{cartCount}</span>}
-        </Link>
-        <Link href="/orders" style={{
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          color: '#1a1a1a',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '8px',
-          textDecoration: 'none',
-          fontWeight: 'bold'
-        }}>
-          📦 Track Order
         </Link>
       </nav>
 
