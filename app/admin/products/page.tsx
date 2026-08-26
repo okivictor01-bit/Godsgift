@@ -2,39 +2,38 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase } from '../../lib/supabaseClient';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  original_price?: number | null;
+  description: string;
+  image_url: string;
+  category: string;
+  stock: number;
+}
 
 export default function ManageProducts() {
-  const [user, setUser] = useState<any>(null);
-  const [products, setProducts] = useState<any[]>([]);
+  const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
-    stock: '',
+    original_price: '',
     description: '',
     image_url: '',
-    category: 'Perfume'
+    category: '',
+    stock: ''
   });
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    checkAuth();
+    fetchProducts();
   }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      router.push('/admin/login');
-    } else {
-      setUser(session.user);
-      fetchProducts();
-    }
-  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -42,220 +41,311 @@ export default function ManageProducts() {
       .from('products')
       .select('*')
       .order('created_at', { ascending: false });
-    
-    if (data) setProducts(data);
+
+    if (data) {
+      setProducts(data);
+    }
     setLoading(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setImageFile(e.target.files[0]);
-    }
-  };
-
-  const uploadImage = async (): Promise<string | null> => {
-    if (!imageFile) return null;
-
-    setUploading(true);
-    const fileExt = imageFile.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = fileName;
-
-    const { error: uploadError } = await supabase.storage
-      .from('product-images')
-      .upload(filePath, imageFile);
-
-    if (uploadError) {
-      alert('Error uploading image: ' + uploadError.message);
-      setUploading(false);
-      return null;
-    }
-
-    // Get public URL
-    const { data } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
-
-    setUploading(false);
-    return data.publicUrl;
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.price) {
-      alert('Name and Price are required!');
-      return;
-    }
-
-    let imageUrl = formData.image_url;
     
-    // Upload new image if selected
-    if (imageFile) {
-      const uploadedUrl = await uploadImage();
-      if (uploadedUrl) {
-        imageUrl = uploadedUrl;
+    const productData = {
+      name: formData.name,
+      price: Number(formData.price),
+      original_price: formData.original_price ? Number(formData.original_price) : null,
+      description: formData.description,
+      image_url: formData.image_url,
+      category: formData.category,
+      stock: Number(formData.stock)
+    };
+
+    if (editingId) {
+      // Update existing product
+      const { error } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', editingId);
+
+      if (error) {
+        alert('Error updating product: ' + error.message);
+      } else {
+        alert('Product updated successfully!');
+        resetForm();
+      }
+    } else {
+      // Add new product
+      const { error } = await supabase
+        .from('products')
+        .insert([productData]);
+
+      if (error) {
+        alert('Error adding product: ' + error.message);
+      } else {
+        alert('Product added successfully!');
+        resetForm();
       }
     }
 
-    const productData = {
-      name: formData.name,
-      price: parseInt(formData.price),
-      stock: parseInt(formData.stock) || 0,
-      description: formData.description,
-      image_url: imageUrl,
-      category: formData.category
-    };
-
-    let error;
-    if (editingId) {
-      const res = await supabase.from('products').update(productData).eq('id', editingId);
-      error = res.error;
-    } else {
-      const res = await supabase.from('products').insert([productData]);
-      error = res.error;
-    }
-
-    if (error) {
-      alert('Error saving product: ' + error.message);
-    } else {
-      alert('Product saved successfully!');
-      resetForm();
-      fetchProducts();
-    }
+    fetchProducts();
   };
 
-  const handleEdit = (product: any) => {
-    setEditingId(product.id);
+  const handleEdit = (product: Product) => {
     setFormData({
-      name: product.name || '',
-      price: product.price?.toString() || '',
-      stock: product.stock?.toString() || '0',
+      name: product.name,
+      price: product.price.toString(),
+      original_price: product.original_price?.toString() || '',
       description: product.description || '',
       image_url: product.image_url || '',
-      category: product.category || 'Perfume'
+      category: product.category || '',
+      stock: product.stock?.toString() || ''
     });
-    setImageFile(null);
-    setIsFormOpen(true);
+    setEditingId(product.id);
+    setShowForm(true);
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
-      const { error } = await supabase.from('products').delete().eq('id', id);
-      if (error) alert('Error deleting: ' + error.message);
-      else fetchProducts();
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        alert('Error deleting product: ' + error.message);
+      } else {
+        alert('Product deleted successfully!');
+        fetchProducts();
+      }
     }
   };
 
   const resetForm = () => {
-    setIsFormOpen(false);
+    setFormData({
+      name: '',
+      price: '',
+      original_price: '',
+      description: '',
+      image_url: '',
+      category: '',
+      stock: ''
+    });
     setEditingId(null);
-    setFormData({ name: '', price: '', stock: '', description: '', image_url: '', category: 'Perfume' });
-    setImageFile(null);
+    setShowForm(false);
   };
-
-  const handleChangePassword = async () => {
-    const newPass = prompt('Enter your new password (min 6 characters):');
-    if (newPass && newPass.length >= 6) {
-      const { error } = await supabase.auth.updateUser({ password: newPass });
-      if (error) alert('Error: ' + error.message);
-      else alert('Password updated successfully!');
-    } else if (newPass) {
-      alert('Password must be at least 6 characters.');
-    }
-  };
-
-  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading products...</div>;
 
   return (
-    <main style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <button onClick={() => router.push('/admin')} style={{ padding: '0.5rem 1rem', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+    <main style={{ fontFamily: 'system-ui, sans-serif', padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '2rem', color: '#1a1a1a' }}>Manage Products</h1>
+        <button
+          onClick={() => router.push('/admin')}
+          style={{
+            padding: '0.75rem 1.5rem',
+            backgroundColor: '#6b7280',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold'
+          }}
+        >
           ← Back
         </button>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Manage Products</h1>
-        <button onClick={handleChangePassword} style={{ padding: '0.5rem 1rem', backgroundColor: '#d4af37', color: 'black', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-          Change Password
-        </button>
       </div>
 
-      {!isFormOpen && (
-        <button 
-          onClick={() => setIsFormOpen(true)}
-          style={{ width: '100%', padding: '1rem', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', marginBottom: '1.5rem' }}
-        >
-          + Add New Product
-        </button>
-      )}
+      <button
+        onClick={() => setShowForm(!showForm)}
+        style={{
+          width: '100%',
+          padding: '1rem',
+          backgroundColor: '#16a34a',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          fontSize: '1.1rem',
+          cursor: 'pointer',
+          marginBottom: '2rem'
+        }}
+      >
+        {showForm ? 'Cancel' : '+ Add New Product'}
+      </button>
 
-      {isFormOpen && (
-        <div style={{ border: '1px solid #d1d5db', borderRadius: '8px', padding: '1.5rem', marginBottom: '2rem', backgroundColor: '#f9fafb' }}>
-          <h2 style={{ marginTop: 0 }}>{editingId ? 'Edit Product' : 'Add New Product'}</h2>
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <input name="name" placeholder="Product Name" value={formData.name} onChange={handleInputChange} required style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }} />
-            <input name="price" type="number" placeholder="Price (e.g. 35000)" value={formData.price} onChange={handleInputChange} required style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }} />
-            <input name="stock" type="number" placeholder="Stock Quantity (e.g. 10)" value={formData.stock} onChange={handleInputChange} required style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }} />
-            
-            {/* Image Upload */}
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold', fontSize: '0.9rem' }}>Product Image</label>
-              <input 
-                type="file" 
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc', width: '100%' }}
+      {showForm && (
+        <form onSubmit={handleSubmit} style={{
+          backgroundColor: '#f9fafb',
+          padding: '2rem',
+          borderRadius: '12px',
+          marginBottom: '2rem',
+          border: '1px solid #e5e7eb'
+        }}>
+          <h2 style={{ marginBottom: '1.5rem', color: '#1a1a1a' }}>
+            {editingId ? 'Edit Product' : 'Add New Product'}
+          </h2>
+
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            <input
+              type="text"
+              placeholder="Product Name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem' }}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#374151' }}>
+                  Sale Price (₦)
+                </label>
+                <input
+                  type="number"
+                  placeholder="Sale Price"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600', color: '#374151' }}>
+                  Original Price () <span style={{ fontWeight: '400', color: '#6b7280' }}>(Optional)</span>
+                </label>
+                <input
+                  type="number"
+                  placeholder="Original Price"
+                  value={formData.original_price}
+                  onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+
+            <textarea
+              placeholder="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', fontFamily: 'inherit' }}
+            />
+
+            <input
+              type="text"
+              placeholder="Image URL"
+              value={formData.image_url}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem' }}
+            />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <input
+                type="text"
+                placeholder="Category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem' }}
               />
-              {uploading && <p style={{ color: '#2563eb', margin: '0.5rem 0 0 0', fontSize: '0.85rem' }}>Uploading image...</p>}
+              <input
+                type="number"
+                placeholder="Stock Quantity"
+                value={formData.stock}
+                onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                required
+                style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem' }}
+              />
             </div>
 
-            <select name="category" value={formData.category} onChange={handleInputChange} style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }}>
-              <option value="Perfume">Perfume</option>
-              <option value="Body Spray">Body Spray</option>
-              <option value="Accessories">Accessories</option>
-            </select>
-            <textarea name="description" placeholder="Description" value={formData.description} onChange={handleInputChange} rows={3} style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }} />
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="submit" disabled={uploading} style={{ flex: 1, padding: '0.75rem', backgroundColor: uploading ? '#9ca3af' : '#1a1a1a', color: 'white', border: 'none', borderRadius: '6px', cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                {editingId ? 'Update' : 'Save'}
-              </button>
-              <button type="button" onClick={resetForm} disabled={uploading} style={{ flex: 1, padding: '0.75rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: uploading ? 'not-allowed' : 'pointer' }}>
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
+            <button
+              type="submit"
+              style={{
+                padding: '1rem',
+                backgroundColor: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '1rem',
+                cursor: 'pointer',
+                marginTop: '0.5rem'
+              }}
+            >
+              {editingId ? 'Update Product' : 'Add Product'}
+            </button>
+          </div>
+        </form>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {products.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#6b7280' }}>No products found. Add your first product above!</p>
-        ) : (
-          products.map((product) => (
-            <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-              <img 
-                src={product.image_url || 'https://via.placeholder.com/60'} 
+      {loading ? (
+        <p style={{ textAlign: 'center' }}>Loading products...</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {products.map((product) => (
+            <div key={product.id} style={{
+              border: '1px solid #e5e7eb',
+              borderRadius: '12px',
+              padding: '1.5rem',
+              display: 'flex',
+              gap: '1.5rem',
+              alignItems: 'center',
+              backgroundColor: 'white'
+            }}>
+              <img
+                src={product.image_url || 'https://via.placeholder.com/100'}
                 alt={product.name}
-                style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px' }}
+                style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px' }}
               />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>{product.name}</div>
-                <div style={{ color: '#16a34a', fontWeight: 'bold' }}>₦{product.price?.toLocaleString()}</div>
-                <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                  Stock: {product.stock || 0} | {product.category}
+                <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1.2rem' }}>{product.name}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: 'bold', color: '#2563eb', fontSize: '1.2rem' }}>
+                    ₦{product.price.toLocaleString()}
+                  </span>
+                  {product.original_price && product.original_price > product.price && (
+                    <span style={{ textDecoration: 'line-through', color: '#9ca3af' }}>
+                      {product.original_price.toLocaleString()}
+                    </span>
+                  )}
                 </div>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 0.5rem 0' }}>
+                  Stock: {product.stock} | {product.category}
+                </p>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <button onClick={() => handleEdit(product)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Edit</button>
-                <button onClick={() => handleDelete(product.id)} style={{ padding: '0.4rem 0.8rem', backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>Delete</button>
+                <button
+                  onClick={() => handleEdit(product)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#2563eb',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(product.id)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    backgroundColor: '#dc2626',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Delete
+                </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
