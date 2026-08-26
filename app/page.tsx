@@ -148,7 +148,7 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {products.map((product) => {
               const isOutOfStock = product.stock === 0 || product.stock === null;
-              const discount = calculateDiscount(product.original_price, product.price);
+              const discount = calculateDiscount(product.original_price || 0, product.price);
               
               return (
                 <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
