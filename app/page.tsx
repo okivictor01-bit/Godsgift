@@ -8,7 +8,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  original_price?: number;
+  original_price?: number | null;
   description: string;
   image_url: string;
   category: string;
@@ -97,7 +97,7 @@ export default function Home() {
           alignItems: 'center',
           gap: '0.5rem'
         }}>
-          🛒 Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}>{cartCount}</span>}
+           Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}>{cartCount}</span>}
         </Link>
       </nav>
 
@@ -148,7 +148,7 @@ export default function Home() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {products.map((product) => {
               const isOutOfStock = product.stock === 0 || product.stock === null;
-              const discount = calculateDiscount(product.original_price || 0, product.price);
+              const discount = product.original_price ? calculateDiscount(product.original_price, product.price) : null;
               
               return (
                 <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
