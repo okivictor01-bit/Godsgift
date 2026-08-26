@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '../../lib/supabaseClient';
-
+import { supabase } from '../../../lib/supabaseClient'; // <-- Fixed path here (three levels up)
 interface OrderItem {
   product_name: string;
   quantity: number;
