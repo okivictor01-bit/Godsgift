@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '../../../lib/supabaseClient';
 
 interface Product {
   id: string;
@@ -12,7 +14,6 @@ interface Product {
   category: string;
   stock: number;
 }
-
 export default function ManageProducts() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
