@@ -8,13 +8,20 @@ export default function Checkout() {
   const router = useRouter();
   const [cart, setCart] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', address: '' });
 
   useEffect(() => {
-    const storedCart = localStorage.getItem('cart');
-    if (storedCart) setCart(JSON.parse(storedCart));
-    else router.push('/cart');
-  }, [router]);
+    // Only check cart if payment is not complete
+    if (!paymentComplete) {
+      const storedCart = localStorage.getItem('cart');
+      if (storedCart) {
+        setCart(JSON.parse(storedCart));
+      } else {
+        router.push('/cart');
+      }
+    }
+  }, [router, paymentComplete]);
 
   const totalAmount = cart.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
 
@@ -42,7 +49,6 @@ export default function Checkout() {
       if (error) throw error;
       if (!newOrder) throw new Error('No order created');
 
-      // Save items
       for (const item of cart) {
         await supabase.from('order_items').insert({
           order_id: newOrder.id,
@@ -59,7 +65,6 @@ export default function Checkout() {
       }
       
       return true;
-      
     } catch (error: any) {
       console.error('Save error:', error);
       return false;
@@ -89,19 +94,21 @@ export default function Checkout() {
           ref: 'GG_' + Math.floor(Math.random() * 1000000000 + 1),
           metadata: { name: formData.name, phone: formData.phone, address: formData.address },
           callback: function(response: any) {
-            // Save order in background
+            // Mark payment as complete BEFORE clearing cart
+            setPaymentComplete(true);
+            
+            // Save order
             saveOrderToDatabase(response.reference).then((success) => {
               if (success) {
-                alert('✅ Payment successful! Order saved.');
+                alert('✅ Payment successful! Thank you for your order.');
               } else {
-                alert('️ Payment successful but order save failed. Contact support with ref: ' + response.reference);
+                alert('⚠️ Payment successful but order save failed. Ref: ' + response.reference);
               }
-            }).catch(() => {
-              alert('⚠️ Payment successful but save error occurred.');
             }).finally(() => {
-              // ALWAYS redirect and clear cart
+              // Clear cart AFTER marking complete
               localStorage.removeItem('cart');
-              router.push('/');
+              // Force redirect to homepage
+              window.location.href = '/';
             });
           },
           onClose: function() {
@@ -117,7 +124,28 @@ export default function Checkout() {
     }, 500);
   };
 
-  if (cart.length === 0) return <div style={{ padding: '2rem', textAlign: 'center' }}>Your cart is empty.</div>;
+  // Show thank you message if payment complete
+  if (paymentComplete) {
+    return (
+      <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: '600px', margin: '0 auto', padding: '2rem 1rem', textAlign: 'center' }}>
+        <div style={{ padding: '3rem 1rem' }}>
+          <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>✅</div>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>Thank You!</h1>
+          <p style={{ color: '#6b7280', marginBottom: '2rem' }}>Your order has been received. We'll contact you soon.</p>
+          <button 
+            onClick={() => window.location.href = '/'} 
+            style={{ padding: '1rem 2rem', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer' }}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (cart.length === 0) {
+    return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
+  }
 
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', maxWidth: '600px', margin: '0 auto', padding: '2rem 1rem' }}>
@@ -142,7 +170,7 @@ export default function Checkout() {
         <input type="tel" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleInputChange} required style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem' }} />
         <textarea name="address" placeholder="Delivery Address" value={formData.address} onChange={handleInputChange} required rows={3} style={{ padding: '1rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1rem', fontFamily: 'inherit' }} />
         <button type="submit" disabled={loading} style={{ padding: '1rem', backgroundColor: loading ? '#9ca3af' : '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: loading ? 'not-allowed' : 'pointer', marginTop: '1rem' }}>
-          {loading ? 'Processing...' : `Pay ₦{totalAmount.toLocaleString()}`}
+          {loading ? 'Processing...' : `Pay ₦${totalAmount.toLocaleString()}`}
         </button>
       </form>
     </main>
