@@ -199,11 +199,11 @@ export default function Home() {
                             </span>
                           )}
                         </div>
-                        {discount && discount > 0 && (
-                          <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0', fontWeight: '600' }}>
-                            Save ₦{(product.original_price - product.price).toLocaleString()}
-                          </p>
-                        )}
+                        {discount && discount > 0 && product.original_price && (
+  <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0', fontWeight: '600' }}>
+    Save ₦{(product.original_price - product.price).toLocaleString()}
+  </p>
+)}
                       </div>
                       <span style={{ 
                         fontSize: '0.85rem', 
