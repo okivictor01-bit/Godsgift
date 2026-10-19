@@ -19,6 +19,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -27,14 +28,8 @@ export default function Home() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      setProducts(data);
-    }
+    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    if (data) setProducts(data);
     setLoading(false);
   };
 
@@ -46,10 +41,8 @@ export default function Home() {
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) return;
-
     let cart = JSON.parse(localStorage.getItem('cart') || '[]');
     const existingItem = cart.find((item: any) => item.id === product.id);
-
     if (existingItem) {
       if (existingItem.quantity < product.stock) {
         existingItem.quantity += 1;
@@ -60,13 +53,11 @@ export default function Home() {
     } else {
       cart.push({ ...product, quantity: 1 });
     }
-
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
     alert(`${product.name} added to cart!`);
   };
 
-  // Calculate discount percentage
   const calculateDiscount = (original: number, sale: number) => {
     if (!original || original <= sale) return null;
     return Math.round(((original - sale) / original) * 100);
@@ -74,165 +65,76 @@ export default function Home() {
 
   return (
     <main>
-      {/* Navigation Bar - Cart Button Only */}
-      <nav style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        padding: '1rem',
-        display: 'flex',
-        justifyContent: 'flex-end',
-        gap: '1rem'
-      }}>
-        <Link href="/cart" style={{
-          backgroundColor: 'rgba(255,255,255,0.9)',
-          color: '#1a1a1a',
-          padding: '0.75rem 1.5rem',
-          borderRadius: '8px',
-          textDecoration: 'none',
-          fontWeight: 'bold',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem'
-        }}>
-           Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.6rem', fontSize: '0.8rem' }}>{cartCount}</span>}
+      {/* Top Navigation Bar */}
+      <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, padding: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
+        <Link href="/track-order" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1a1a1a', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          📦 Track Order
+        </Link>
+        <Link href="/cart" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1a1a1a', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+          🛒 Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>{cartCount}</span>}
         </Link>
       </nav>
 
       {/* Hero Section */}
-      <section style={{
-        position: 'relative',
-        height: '500px',
-        backgroundImage: 'url(/hero-bg.jpg)',
-        backgroundSize: 'cover',
+      <section style={{ 
+        position: 'relative', 
+        height: '500px', 
+        backgroundImage: 'url(/hero-bg.jpg)', 
+        backgroundSize: 'cover', 
         backgroundPosition: 'center',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: '3rem'
+        backgroundRepeat: 'no-repeat',
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginBottom: '3rem' 
       }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.4)',
-          zIndex: 1
-        }} />
-        <div style={{ 
-          position: 'relative', 
-          zIndex: 2, 
-          textAlign: 'center', 
-          color: 'white',
-          padding: '2rem'
-        }}>
-          <h1 style={{ fontSize: '3rem', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
-            God'sGift Essence
-          </h1>
-          <p style={{ fontSize: '1.5rem', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>
-            Scented by Grace, Made to Leave a Mark
-          </p>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 1 }} />
+        <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', color: 'white', padding: '2rem' }}>
+          <h1 style={{ fontSize: '3rem', marginBottom: '1rem', textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>God'sGift Essence</h1>
+          <p style={{ fontSize: '1.5rem', textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>Scented by Grace, Made to Leave a Mark</p>
         </div>
       </section>
 
       {/* Products Section */}
       <div style={{ padding: '1rem', maxWidth: '800px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
         <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1.8rem' }}>Our Products</h2>
-        
-        {loading ? (
-          <p style={{ textAlign: 'center' }}>Loading products...</p>
-        ) : (
+        {loading ? <p style={{ textAlign: 'center' }}>Loading...</p> : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {products.map((product) => {
               const isOutOfStock = product.stock === 0 || product.stock === null;
               const discount = product.original_price ? calculateDiscount(product.original_price, product.price) : null;
-              
               return (
-                <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                  <div style={{ position: 'relative' }}>
+                <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', backgroundColor: 'white' }}>
+                  <div style={{ position: 'relative', backgroundColor: '#f9fafb' }}>
+                    {/* CLICKABLE IMAGE FOR ZOOM */}
                     <img 
-                      src={product.image_url || 'https://via.placeholder.com/400x300?text=No+Image'} 
-                      alt={product.name}
-                      style={{ width: '100%', height: '250px', objectFit: 'cover' }}
+                      src={product.image_url || 'https://via.placeholder.com/400x300'} 
+                      alt={product.name} 
+                      onClick={() => setSelectedImage(product.image_url)}
+                      style={{ width: '100%', height: 'auto', maxHeight: '400px', objectFit: 'contain', display: 'block', cursor: 'zoom-in' }} 
                     />
                     {discount && discount > 0 && (
-                      <div style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        backgroundColor: '#dc2626',
-                        color: 'white',
-                        padding: '0.4rem 0.8rem',
-                        borderRadius: '6px',
-                        fontWeight: 'bold',
-                        fontSize: '0.9rem'
-                      }}>
-                        {discount}% OFF
-                      </div>
+                      <div style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#dc2626', color: 'white', padding: '0.4rem 0.8rem', borderRadius: '6px', fontWeight: 'bold', fontSize: '0.9rem' }}>{discount}% OFF</div>
                     )}
                   </div>
-                  
                   <div style={{ padding: '1.5rem' }}>
                     <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', color: '#1a1a1a' }}>{product.name}</h2>
-                    <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>
-                      {product.description || 'No description available.'}
-                    </p>
-
-                    {/* Price Display with Strike Price */}
+                    <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: '0 0 1.5rem 0', lineHeight: '1.5' }}>{product.description || 'No description'}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#2563eb' }}>
-                            ₦{product.price?.toLocaleString()}
-                          </span>
+                          <span style={{ fontWeight: 'bold', fontSize: '1.5rem', color: '#2563eb' }}>₦{product.price.toLocaleString()}</span>
                           {product.original_price && product.original_price > product.price && (
-                            <span style={{ 
-                              textDecoration: 'line-through', 
-                              color: '#9ca3af', 
-                              fontSize: '1.1rem',
-                              fontWeight: '500'
-                            }}>
-                              ₦{product.original_price.toLocaleString()}
-                            </span>
+                            <span style={{ textDecoration: 'line-through', color: '#9ca3af', fontSize: '1.1rem' }}>₦{product.original_price.toLocaleString()}</span>
                           )}
                         </div>
-                        {discount && discount > 0 && product.original_price && (
-  <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0', fontWeight: '600' }}>
-    Save ₦{(product.original_price - product.price).toLocaleString()}
-  </p>
-)}
+                        {discount && discount > 0 && <p style={{ color: '#dc2626', fontSize: '0.85rem', margin: '0.25rem 0 0 0', fontWeight: '600' }}>Save ₦{(product.original_price! - product.price).toLocaleString()}</p>}
                       </div>
-                      <span style={{ 
-                        fontSize: '0.85rem', 
-                        padding: '0.4rem 0.8rem', 
-                        borderRadius: '20px',
-                        backgroundColor: isOutOfStock ? '#fee2e2' : '#dcfce7',
-                        color: isOutOfStock ? '#dc2626' : '#16a34a',
-                        fontWeight: 'bold'
-                      }}>
+                      <span style={{ fontSize: '0.85rem', padding: '0.4rem 0.8rem', borderRadius: '20px', backgroundColor: isOutOfStock ? '#fee2e2' : '#dcfce7', color: isOutOfStock ? '#dc2626' : '#16a34a', fontWeight: 'bold' }}>
                         {isOutOfStock ? 'Out of Stock' : `In Stock (${product.stock})`}
                       </span>
                     </div>
-
-                    <button
-                      onClick={() => addToCart(product)}
-                      disabled={isOutOfStock}
-                      style={{
-                        width: '100%',
-                        padding: '1rem',
-                        backgroundColor: isOutOfStock ? '#9ca3af' : '#2563eb',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem',
-                        cursor: isOutOfStock ? 'not-allowed' : 'pointer',
-                        transition: 'background-color 0.2s'
-                      }}
-                    >
+                    <button onClick={() => addToCart(product)} disabled={isOutOfStock} style={{ width: '100%', padding: '1rem', backgroundColor: isOutOfStock ? '#9ca3af' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.1rem', cursor: isOutOfStock ? 'not-allowed' : 'pointer' }}>
                       {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                     </button>
                   </div>
@@ -242,6 +144,36 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* FULL SCREEN IMAGE ZOOM POPUP (MODAL) */}
+      {selectedImage && (
+        <div 
+          onClick={() => setSelectedImage(null)} 
+          style={{ 
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+            backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 2000, 
+            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            padding: '1rem', cursor: 'zoom-out' 
+          }}
+        >
+          <img 
+            src={selectedImage} 
+            alt="Full size view" 
+            style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} 
+          />
+          <button 
+            onClick={() => setSelectedImage(null)}
+            style={{ 
+              position: 'absolute', top: '20px', right: '20px', 
+              color: 'white', fontSize: '2.5rem', background: 'none', 
+              border: 'none', cursor: 'pointer', fontWeight: 'bold' 
+            }}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
     </main>
   );
 }
