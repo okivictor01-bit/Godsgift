@@ -65,11 +65,8 @@ export default function Home() {
 
   return (
     <main>
-      {/* Top Navigation Bar */}
-      <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, padding: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', alignItems: 'center' }}>
-        <Link href="/track-order" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1a1a1a', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          📦 Track Order
-        </Link>
+      {/* Top Navigation Bar (Cart Only) */}
+      <nav style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, padding: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <Link href="/cart" style={{ backgroundColor: 'rgba(255,255,255,0.9)', color: '#1a1a1a', padding: '0.75rem 1rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           🛒 Cart {cartCount > 0 && <span style={{ backgroundColor: '#2563eb', color: 'white', borderRadius: '50%', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>{cartCount}</span>}
         </Link>
